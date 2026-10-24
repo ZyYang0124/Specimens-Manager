@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>标本信息管理系统</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- ============ 登录 / 注册 ============ -->
+<div id="login-view" class="login-wrap" hidden>
+  <div class="login-card">
+    <div class="login-mark"><img src="/static/logo.png" alt="实验室徽标" class="brand-logo-img"></div>
+    <h1 id="login-title">标本信息管理系统</h1>
+    <p class="login-sub">多人协作 · 全程可追溯 · 版本可回退</p>
+    <div class="login-tabs">
+      <button id="tab-login" class="active" type="button">登 录</button>
+      <button id="tab-register" type="button">注 册</button>
+    </div>
+    <form id="login-form" autocomplete="off">
+      <label>用户名
+        <input id="f-username" type="text" maxlength="30" required autocomplete="username">
+      </label>
+      <label>密码
+        <input id="f-password" type="password" minlength="4" required autocomplete="current-password">
+      </label>
+      <label id="f-password2-label" hidden>确认密码
+        <input id="f-password2" type="password" minlength="4" autocomplete="new-password">
+      </label>
+      <label id="f-invite-label" hidden>邀请码
+        <input id="f-invite" type="text" placeholder="请向管理员索取" autocomplete="off" style="text-transform:uppercase">
+      </label>
+      <p id="login-setup-hint" class="login-sub" hidden style="margin:-6px 0 12px">初始设置：第一个注册的账号将自动成为管理员</p>
+      <div id="login-err" class="login-err" hidden></div>
+      <button id="login-submit" class="btn primary block" type="submit">登 录</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ 主应用 ============ -->
+<div id="app-view" hidden>
+  <div class="shell">
+  <aside id="sidenav" aria-label="主导航">
+    <div class="nav-brand">
+      <span class="brand-mark"><img src="/static/logo.png" alt="实验室徽标" class="brand-logo-img"></span>
+      <span class="nav-brand-text" id="brand-name">标本信息管理系统</span>
+    </div>
+    <nav id="table-tabs" class="tabs" aria-label="按任务组织的导航"></nav>
+    <div class="nav-foot">
+      <button id="nav-collapse" type="button" aria-label="折叠或展开导航">
+        <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+        <span class="nav-label">收起导航</span>
+      </button>
+    </div>
+  </aside>
+  <div class="main-col">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand" id="brand-home" title="回到首页（标本库总览）" role="button" tabindex="0"><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span></span>
+      <div class="crumb" id="crumb" aria-label="当前位置"></div>
+      <div class="more-wrap" id="more-wrap" hidden>
+        <button id="more-btn" class="more-btn" type="button">更多 <span class="caret">▾</span></button>
+        <div id="more-menu" class="dropdown" hidden></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="global-search-btn" class="btn ghost" type="button" title="全局搜索：跨所有有权限的表查找（Ctrl+K）"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> 搜索</button>
+      <div class="undo-wrap">
+        <button id="btn-undo" class="btn ghost" type="button" title="撤销上一步（Ctrl+Z）" aria-label="撤销上一步（Ctrl+Z）" disabled>↶</button>
+        <button id="btn-redo" class="btn ghost" type="button" title="重做（Ctrl+Y）" aria-label="重做（Ctrl+Y）" disabled>↷</button>
+        <button id="btn-undo-list" class="btn ghost" type="button" title="最近的操作（可撤销/重做）" aria-label="查看最近的操作清单">▾</button>
+        <div id="undo-menu" class="dropdown undo-menu" hidden></div>
+      </div>
+      <div class="user-menu">
+        <button id="user-btn" class="btn ghost" type="button"></button>
+        <div id="user-dropdown" class="dropdown" hidden>
+          <button id="mi-density" type="button">显示密度：切换 紧凑/舒适</button>
+          <button id="mi-drafts" type="button">清除本机草稿</button>
+          <button id="mi-prefs-history" type="button">偏好历史（找回）</button>
+          <button id="mi-reset-prefs" type="button">恢复全部偏好</button>
+          <button id="mi-password" type="button">修改密码</button>
+          <button id="mi-perm" type="button">我的权限</button>
+
+          <button id="mi-boxes" type="button" hidden>标本盒管理</button>
+          <button id="mi-tokens" type="button">API Token</button>
+          <button id="mi-backup" type="button" hidden>下载数据库备份</button>
+          <button id="mi-users" type="button" hidden>成员与邀请码</button>
+          <button id="mi-logout" type="button">退出登录</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ---------- 首页仪表盘 ---------- -->
+  <main id="view-home" hidden>
+    <div class="dash-hero">
+      <div class="dash-hero-left">
+        <h1>标本库总览</h1>
+        <div class="dash-sub"><span class="live-dot"></span> <span id="dash-sub-text">正在同步…</span></div>
+      </div>
+      <div class="dash-total">
+        <div class="dt-num" id="dash-total">0</div>
+        <div class="dt-label">号标本 · 实时</div>
+        <div class="dt-chips" id="dash-chips"></div>
+      </div>
+    </div>
+    <div id="dash-actions" class="dash-actions"></div>
+    <div id="dash-metrics"></div>
+    <div id="dash-body"></div>
+  </main>
+
+  <!-- ---------- 数据表视图 ---------- -->
+  <main id="view-table" hidden>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="搜索全部列…  (如 MHBU-ARA-00020000、Liphistius、云南省)">
+      <button id="btn-refresh" class="btn" type="button" title="重新加载本表数据"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span> 刷新</button>
+      <button id="btn-ident-sync" class="btn" type="button" hidden><span id="ident-sync-label"></span> <span id="dna-diff-count" class="pill"></span></button>
+      <span class="sep"></span>
+      <button id="btn-add" class="btn primary" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span> 新增行</button>
+      <span class="tmenu-wrap">
+        <button id="btn-import-menu" class="btn" type="button" aria-haspopup="true"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0 4 4m-4-4L8 7"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span> 导入 <span class="caret">▾</span></button>
+        <div id="menu-import" class="tmenu" hidden>
+          <button id="btn-import" type="button" aria-disabled="false">导入 Excel（合并/替换）</button>
+          <button id="btn-paste" type="button" aria-disabled="false">粘贴导入（从 Excel 复制区域）</button>
+        </div>
+      </span>
+      <span class="tmenu-wrap">
+        <button id="btn-export-menu" class="btn" type="button" aria-haspopup="true"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span> 导出 <span class="caret">▾</span></button>
+        <div id="menu-export" class="tmenu" hidden>
+          <button id="btn-export-wizard" type="button">导出向导（勾选 / 筛选 / 全表）</button>
+          <button id="btn-export-all" type="button">导出全库（可见全部表）</button>
+          <button id="btn-headers" type="button">导出表头模板（Excel 填写用）</button>
+          <button id="btn-collab-filtered" type="button" title="把当前筛选固化为协作编辑包：协作者离线改，回传三方合并">协作编辑包（当前筛选）</button>
+          <button id="btn-mateex-filtered" type="button" title="按分类学 Material examined 惯例把当前筛选聚合成可粘贴文本">生成 Material examined（当前筛选）</button>
+          <button id="btn-print-log" type="button">打印清单（留痕）</button>
+        </div>
+      </span>
+      <span class="tmenu-wrap">
+        <button id="btn-manage-menu" class="btn" type="button" aria-haspopup="true"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M19.4 4.6l-2.1 2.1M6.7 17.3l-2.1 2.1"/></svg></span> 管理 <span class="caret">▾</span></button>
+        <div id="menu-manage" class="tmenu" hidden>
+          <div class="tmenu-search"><input id="manage-search" type="search" placeholder="检索管理功能…" aria-label="检索管理功能"></div>
+          <button id="btn-sra" type="button" hidden>按 Sample Code 匹配 NCBI SRA 号</button>
+          <button id="btn-loaned" type="button" hidden>借出中视图（已借出未归还）</button>
+          <button id="btn-deleted" type="button">回收站 <span id="del-count" class="pill"></span></button>
+          <button id="btn-versions" type="button">版本管理（快照/恢复/对比）<span id="ver-count" class="pill"></span></button>
+          <button id="btn-cols" type="button">列显示与隐藏 <span id="hide-count" class="pill"></span></button>
+          <button id="btn-dynproj" type="button" title="把当前表格筛选固化为动态项目的成员规则（可视化筛选器）">从当前筛选创建动态项目</button>
+        </div>
+      </span>
+      <select id="task-view" title="任务视图：按任务切换列集合/固定列/排序" style="max-width:170px">
+        <option value="">任务视图：整表默认</option>
+      </select>
+      <span id="why-ro" class="why-ro" hidden><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></span>您对本表只读：新增/导入不可用，如需修改请向管理员申请编辑权限</span>
+      <span id="perm-chip" class="pill perm-chip" title="您在当前表的编辑权限"></span>
+      <span id="table-stat" class="stat"></span>
+    </div>
+    <div id="ck-back" class="ck-back" hidden></div>
+    <div id="ck-bar" class="ck-bar" hidden></div>
+    <div id="filter-chips" class="filter-chips" hidden></div>
+    <div id="selbar" class="selbar" hidden></div>
+    <div class="colmenu-wrap">
+      <!-- 列显示面板容器（v3.94 补：此前 #colmenu 从未定义，「列显示与隐藏」面板无法打开，
+           且全局收起处理器在此元素上 TypeError 中断、殃及用户菜单点外收起） -->
+      <div id="colmenu" class="dropdown colmenu" hidden></div>
+    </div>
+    <div class="grid-wrap">
+      <table id="grid"><thead id="grid-head"></thead><tbody id="grid-body"></tbody></table>
+      <div id="grid-empty" class="empty" hidden></div>
+      <div id="grid-noperm" class="empty" hidden><b>您没有该表的访问权限。</b><br><span class="hint">请向管理员申请可见权限，或在左上角导航选择您有权限的表。</span></div>
+    </div>
+    <div class="pager" id="pager"></div>
+  </main>
+
+  <!-- ---------- 变更历史视图 ---------- -->
+  <main id="view-history" hidden>
+    <div class="toolbar">
+      <select id="h-table"><option value="">全部表</option></select>
+      <select id="h-user"><option value="">全部操作人</option></select>
+      <select id="h-action">
+        <option value="">全部操作</option>
+        <option value="create">新增</option>
+        <option value="update">修改</option>
+        <option value="delete">删除</option>
+        <option value="undelete">还原</option>
+        <option value="purge">彻底删除</option>
+        <option value="import">导入</option>
+        <option value="restore">恢复</option>
+        <option value="version">版本</option>
+        <option value="file">附件</option>
+        <option value="catalog_update">名录更新</option>
+      </select>
+      <input id="h-from" type="date" title="起始日期">
+      <input id="h-to" type="date" title="结束日期">
+      <input id="h-search" type="search" placeholder="搜索编号 / 内容 / 操作人…">
+      <button id="h-refresh" class="btn" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span> 刷新</button>
+      <button id="h-export" class="btn" type="button" title="把当前筛选的历史导出为 Excel 审计清单"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span> 导出记录</button>
+      <button id="h-audit" class="btn" type="button" title="校验审计链哈希连续性（prev_hash→hash）">校验审计链</button>
+      <span class="stat" id="h-stat"></span>
+    </div>
+    <div id="activity-panel"></div>
+    <div id="history-list" class="history-list"></div>
+    <div class="pager" id="h-pager"></div>
+  </main>
+
+  <!-- ---------- 数据体检视图 ---------- -->
+  <main id="view-checkup" hidden>
+    <div class="toolbar">
+      <button id="ck-refresh" class="btn" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span> 重新体检</button>
+      <span style="position:relative">
+        <button id="ck-tools-btn" class="btn" type="button">数据工具 ▾</button>
+        <div id="ck-tools-menu" class="dropdown" hidden style="left:0;right:auto;min-width:190px">
+          <button id="ck-geo" class="btn ghost" type="button" hidden title="把采集地信息里的国家/省份/城市统一为官方正式地名">整理地名</button>
+          <button id="ck-coord" class="btn ghost" type="button" hidden title="把采集地信息里的度分(秒)坐标转为小数度（预览确认后应用）">坐标转小数度</button>
+          <button id="ck-wsc" class="btn ghost" type="button" hidden title="按 WSC 官方更新流校准 FinalSpeciesName（异名→接受名）">按 WSC 校准物种名</button>
+          <button id="ck-fieldcat" class="btn ghost" type="button" title="字段语义目录：稳定字段 ID、别名与含义（数据字典）">字段目录</button>
+          <div class="more-sep"></div>
+          <button id="ck-evmerge" class="btn ghost" type="button" hidden title="重复合并：预览字段差异与受影响标本，审阅后合并（被合并编号重定向为别名）">合并重复采集事件</button>
+          <button id="ck-refs" class="btn ghost" type="button" hidden title="编号引用体检/审阅式迁移（重复、空号、失配处置）">稳定引用治理</button>
+          <button id="ck-fields" class="btn ghost" type="button" hidden title="扫描各表字段值的日期/坐标/数量类型符合度，人工确认后登记">字段类型扫描</button>
+          <button id="ck-wscrefresh" class="btn ghost" type="button" hidden title="从 WSC 官方刷新属/种名录（后台任务，可取消）">刷新 WSC 名录</button>
+          <button id="ck-att" class="btn ghost" type="button" hidden title="附件一致性诊断（对象存在性/摘要/孤儿）">附件诊断</button>
+          <button id="ck-vacuum" class="btn ghost" type="button" hidden title="压缩数据库文件（VACUUM，需要独立维护窗口门槛）">压缩数据库</button>
+          <div class="more-sep"></div>
+          <button id="btn-bin-tools" class="btn ghost danger" type="button" hidden title="清空本表回收站，或按删除时间批量清理">清理回收站</button>
+        </div>
+      </span>
+      <span class="stat" id="ck-stat"></span>
+    </div>
+    <div id="checkup-body"></div>
+  </main>
+
+  <!-- ---------- 关于本系统 ---------- -->
+  <main id="view-workbench" hidden></main>
+  <main id="view-about" hidden></main>
+
+  <!-- ---------- 模板导出 / 协作编辑包 / 流转 / 实验 / 文献 / 项目 / 组合表 ---------- -->
+  <main id="view-tplexp" hidden></main>
+  <main id="view-collab" hidden></main>
+  <main id="view-movements" hidden></main>
+  <main id="view-labpage" hidden></main>
+  <main id="view-biblio" hidden></main>
+  <main id="view-projects" hidden></main>
+  <main id="view-recent" hidden></main>
+  <main id="view-composite" hidden></main>
+
+  <!-- ---------- 统计视图 ---------- -->
+  <main id="view-stats" hidden>
+    <div class="toolbar">
+      <button id="st-refresh" class="btn" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span> 刷新</button>
+      <span class="stat" id="st-stat"></span>
+      <button id="st-dl" class="btn" type="button" title="图表数据 CSV 下载（附数据子集、指标定义和排除数量）"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg></span> 图表数据下载</button>
+    </div>
+    <div id="stats-body"></div>
+  </main>
+  </div><!-- /main-col -->
+  </div><!-- /shell -->
+</div>
+
+<!-- ============ 行历史抽屉 ============ -->
+<div id="drawer-overlay" hidden></div>
+<aside id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+  <div class="drawer-head">
+    <button id="drawer-back" class="btn ghost" type="button" hidden aria-label="返回详情" title="返回详情（浏览器后退同样有效）">← 详情</button>
+    <h3 id="drawer-title">详情</h3>
+    <button id="drawer-close" class="btn ghost" type="button" aria-label="关闭面板">✕</button>
+  </div>
+  <div id="drawer-top2" class="drawer-top2" hidden></div>
+  <div id="drawer-body" class="drawer-body"></div>
+</aside>
+
+<!-- ============ 通用弹窗 ============ -->
+<div id="modal-overlay" hidden></div>
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-head">
+    <h3 id="modal-title"></h3>
+    <button id="modal-close" class="btn ghost" type="button" aria-label="关闭弹窗">✕</button>
+  </div>
+  <div id="modal-body" class="modal-body"></div>
+</div>
+
+<!-- ============ 筛选浮层 ============ -->
+<div id="filter-pop" class="filter-pop" hidden></div>
+
+<div id="toast-box" role="status" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

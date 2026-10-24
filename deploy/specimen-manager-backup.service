@@ -1,0 +1,7 @@
+[Unit]
+Description=Specimen Manager daily backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/specimen-manager
+ExecStart=/opt/specimen-manager/venv/bin/python backup.py

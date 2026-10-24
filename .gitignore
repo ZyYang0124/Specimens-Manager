@@ -1,0 +1,28 @@
+# 内部运维脚本：含服务器地址与凭据，严禁入库
+server_ops/
+
+# 运行时数据：数据库 / 附件 / 备份 —— 生产数据只存在于部署机，绝不进 git
+data.db
+data.db-journal
+data.db-wal
+data.db-shm
+uploads/
+backups/
+
+# 名录缓存（由 update_wsc.py / update_wac.py 下载生成）
+wsc_*.json
+wac_*.json
+
+# 本地初始导入用的源 Excel（各实验室自己的数据）
+MasterSpecimenInfo*.xlsx
+UCE.library.master*.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# 其他
+*.log
+.env

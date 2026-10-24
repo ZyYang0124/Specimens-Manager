@@ -1,0 +1,13 @@
+[Unit]
+Description=Specimen Manager (标本信息管理系统)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/specimen-manager
+ExecStart=/opt/specimen-manager/venv/bin/python server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
